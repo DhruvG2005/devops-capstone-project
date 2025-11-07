@@ -119,8 +119,34 @@ class TestAccountService(TestCase):
         response = self.client.post(
             BASE_URL,
             json=account.serialize(),
-            content_type="test/html"
+            content_type="text/plain" 
         )
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
     # ADD YOUR TEST CASES HERE ...
+    def test_get_account(self):
+        """It should Read a single Account"""
+        account = self._create_accounts(1)[0]
+        resp = self.client.get(
+            f"{BASE_URL}/{account.id}", content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(data["name"], account.name)
+
+    def test_get_account_not_found(self):
+        """It should not Read an Account that is not found"""
+        resp = self.client.get(f"{BASE_URL}/0")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_internal_server_error_handler(self):
+        """It should handle 500 Internal Server Error"""
+        app.testing = False  # disable test mode so error handler runs
+        with app.test_client() as client:
+            @app.route("/cause_error")
+            def cause_error():
+                raise Exception("Unexpected")
+            resp = client.get("/cause_error")
+            self.assertEqual(resp.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+    app.testing = True  # restore testing mode
+
