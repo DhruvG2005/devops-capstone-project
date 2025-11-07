@@ -148,5 +148,26 @@ class TestAccountService(TestCase):
                 raise Exception("Unexpected")
             resp = client.get("/cause_error")
             self.assertEqual(resp.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-    app.testing = True  # restore testing mode
+        app.testing = True  # restore testing mode
+
+    def test_update_account(self):
+        """It should Update an existing Account"""
+        # create a sample account first
+        account = self._create_accounts(1)[0]
+        new_name = "Updated Name"
+        account_data = account.serialize()
+        account_data["name"] = new_name
+
+        # send PUT request to update account
+        resp = self.client.put(
+            f"{BASE_URL}/{account.id}",
+            json=account_data,
+            content_type="application/json"
+        )
+
+        # verify update worked
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(data["name"], new_name)
+
 
